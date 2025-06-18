@@ -21,21 +21,21 @@ try:
         print("📦 Subdirectory not found, trying root import...")
         from app import app
         print("✅ Flask app imported from root directory")
-
+    
     # Configure app for production
     app.config['DEBUG'] = False
-
+    
     # Expose app for gunicorn
     application = app
-
+    
     # Get port from environment
     port = int(os.environ.get("PORT", 5000))
     print(f"🌐 Starting server on 0.0.0.0:{port}")
-
+    
     # Start the app (only if running directly, not with gunicorn)
     if __name__ == "__main__":
-        app.run(host="0.0.0.0", port=port, debug=False, threaded=True)       
-
+        app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+        
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("📁 Available files:")
