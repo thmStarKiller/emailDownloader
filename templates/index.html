@@ -390,19 +390,33 @@
             border-radius: 8px;
             text-align: center;
             border: 1px solid var(--border-color);
-        }
-
-        .stat-number {
+        }        .stat-number {
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--rick-green);
             display: block;
+            transition: all 0.3s ease;
         }
 
         .stat-label {
             font-size: 0.75rem;
             color: var(--text-muted);
             text-transform: uppercase;
+        }
+
+        /* Enhanced typewriter with better cursor */
+        .typewriter {
+            border-right: 3px solid var(--rick-green);
+            animation: blink-cursor 1.2s infinite;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        @keyframes blink-cursor {
+            0%, 50% { border-right-color: var(--rick-green); }
+            51%, 100% { border-right-color: transparent; }
         }
 
         .download-complete {
@@ -563,10 +577,23 @@
             }
 
             return setInterval(addEmoji, 1000);
-        }
-
-        // Typewriter effect
+        }        // Enhanced Typewriter effect for Rick & Morty messages
+        let currentTypewriterTimeout = null;
+        let lastMessage = '';
+        
         function typewriterEffect(text, element, callback) {
+            // Skip if same message or element is already typing this message
+            if (text === lastMessage && element.textContent === text) {
+                return;
+            }
+            
+            lastMessage = text;
+            
+            // Clear any ongoing typewriter effect
+            if (currentTypewriterTimeout) {
+                clearTimeout(currentTypewriterTimeout);
+            }
+            
             element.textContent = '';
             element.classList.add('typewriter');
             let i = 0;
@@ -575,12 +602,18 @@
                 if (i < text.length) {
                     element.textContent += text.charAt(i);
                     i++;
-                    setTimeout(type, 50 + Math.random() * 50);
+                    // Smoother typing with variable speed for natural feel
+                    let delay = 30;
+                    if (text.charAt(i) === ' ') delay = 50;  // Pause at spaces
+                    if (text.charAt(i) === ',' || text.charAt(i) === '.') delay = 150;  // Pause at punctuation
+                    if (text.charAt(i) === '!' || text.charAt(i) === '?') delay = 200;  // Longer pause at exclamation
+                    
+                    currentTypewriterTimeout = setTimeout(type, delay + Math.random() * 20);
                 } else {
-                    setTimeout(() => {
+                    currentTypewriterTimeout = setTimeout(() => {
                         element.classList.remove('typewriter');
                         if (callback) callback();
-                    }, 1000);
+                    }, 800);
                 }
             }
             
@@ -623,53 +656,87 @@
                 hideLoading();
                 alert('Error starting download: ' + error.message);
             });
-        }
-
-        // Check download progress
+        }        // Check download progress - optimized for faster updates
         function checkProgress(emojiInterval) {
             if (!currentJobId) return;
             
-            progressInterval = setInterval(() => {
+            // Start with faster polling, then slow down
+            let pollInterval = 500; // Start checking every 500ms
+            let pollCount = 0;
+            
+            function poll() {
                 fetch(`/progress/${currentJobId}`)
                 .then(response => response.json())
                 .then(data => {
                     updateProgress(data);
+                    pollCount++;
                     
                     if (data.status === 'completed') {
-                        clearInterval(progressInterval);
+                        clearTimeout(progressInterval);
                         clearInterval(emojiInterval);
                         showDownloadLink();
+                        return;
                     } else if (data.status === 'failed') {
-                        clearInterval(progressInterval);
+                        clearTimeout(progressInterval);
                         clearInterval(emojiInterval);
                         hideLoading();
                         alert('Download failed: ' + data.funny_message);
+                        return;
                     }
+                    
+                    // Adaptive polling - slow down after initial burst
+                    if (pollCount > 10) {
+                        pollInterval = 1000; // Slow to 1 second after 10 checks
+                    }
+                    if (pollCount > 30) {
+                        pollInterval = 2000; // Even slower after 30 checks
+                    }
+                    
+                    progressInterval = setTimeout(poll, pollInterval);
                 })
                 .catch(error => {
                     console.error('Progress check error:', error);
+                    progressInterval = setTimeout(poll, 2000); // Retry in 2 seconds on error
                 });
-            }, 1000);
-        }
-
-        // Update progress display
+            }
+            
+            poll(); // Start immediately
+        }// Update progress display with better message handling
         function updateProgress(data) {
             const progressFill = document.getElementById('progress-fill');
             const progressText = document.getElementById('progress-text');
             const typewriterText = document.getElementById('typewriter-text');
             
-            // Update progress bar
+            // Update progress bar with animation
             progressFill.style.width = data.progress + '%';
             progressText.textContent = `${data.progress}% Complete (${data.completed}/${data.total})`;
             
-            // Update stats
-            document.getElementById('completed-count').textContent = data.completed || 0;
-            document.getElementById('failed-count').textContent = data.failed || 0;
-            document.getElementById('total-count').textContent = data.total || 0;
+            // Update stats with number animation
+            animateNumber('completed-count', data.completed || 0);
+            animateNumber('failed-count', data.failed || 0);
+            animateNumber('total-count', data.total || 0);
             
-            // Update funny message with typewriter effect
-            if (data.funny_message && typewriterText.textContent !== data.funny_message) {
+            // Update funny message with improved typewriter effect
+            if (data.funny_message && data.funny_message.trim() !== lastMessage.trim()) {
+                console.log('🎭 New Rick message:', data.funny_message);
                 typewriterEffect(data.funny_message, typewriterText);
+            }
+        }
+        
+        // Animate number changes
+        function animateNumber(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            const currentValue = parseInt(element.textContent) || 0;
+            
+            if (currentValue !== targetValue) {
+                element.style.transform = 'scale(1.2)';
+                element.style.color = 'var(--rick-green)';
+                element.textContent = targetValue;
+                
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                    element.style.color = '';
+                }, 300);
             }
         }
 
