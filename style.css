@@ -1,0 +1,62 @@
+/* SiteSync Pro - Enterprise Content Management System */
+/* Custom Corporate Typography */
+@font-face {
+  font-family: 'Comodo';
+  src: url('../fonts/Comodo-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Enhanced Corporate Styling */
+.enterprise-mode {
+  font-family: 'Inter', 'Comodo', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Professional button hover effects */
+.submit-button:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  box-shadow: 0 20px 40px rgba(124, 58, 237, 0.4);
+}
+
+/* Enhanced form focus states */
+.form-input:focus {
+  border-color: rgba(124, 58, 237, 0.6);
+  box-shadow: 
+    0 0 0 3px rgba(124, 58, 237, 0.1),
+    0 4px 12px rgba(124, 58, 237, 0.15);
+}
+
+/* Loading state enhancements */
+.loading-overlay.active {
+  backdrop-filter: blur(12px);
+}
+
+.progress-ring svg {
+  filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.6));
+}
+
+/* Corporate animations */
+@keyframes enterprise-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3); 
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.6); 
+  }
+}
+
+.status-indicator {
+  animation: enterprise-glow 3s infinite ease-in-out;
+}
+
+/* Responsive corporate design */
+@media (max-width: 768px) {
+  .main-container {
+    margin: 1rem;
+    padding: 2rem 1.5rem;
+  }
+  
+  .logo {
+    font-size: 2rem;
+  }
+}

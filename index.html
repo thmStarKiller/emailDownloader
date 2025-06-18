@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiteSync Pro | Enterprise Content Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --surface-dark: rgba(15, 23, 42, 0.95);
+            --surface-light: rgba(30, 41, 59, 0.8);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-color: rgba(148, 163, 184, 0.2);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f172a;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(245, 87, 108, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+            z-index: -2;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+        }
+
+        .main-container {
+            background: var(--surface-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--primary-gradient);
+            opacity: 0.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .alert {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .form-hint {
+            margin-top: 0.375rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-button:hover::before {
+            left: 100%;
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .tech-badge {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            position: relative;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.5));
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 3;
+        }
+
+        .progress-ring .background {
+            stroke: rgba(148, 163, 184, 0.2);
+        }
+
+        .progress-ring .progress {
+            stroke: url(#progressGradient);
+            stroke-dasharray: 314;
+            stroke-dashoffset: 314;
+            animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { stroke-dashoffset: 314; }
+            50% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 314; }
+        }        .loading-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .loading-message {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-style: italic;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Typewriter Effect */
+        .typewriter {
+            border-right: 2px solid var(--text-secondary);
+            animation: blink-cursor 1s infinite;
+            white-space: nowrap;
+            overflow: hidden;
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @keyframes blink-cursor {
+            0%, 50% { border-right-color: var(--text-secondary); }
+            51%, 100% { border-right-color: transparent; }
+        }
+
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .main-container {
+                padding: 2rem;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay"></div>
+    
+    <div class="main-container">
+        <div class="status-indicator"></div>
+        
+        <div class="header">
+            <h1 class="logo">SiteSync Pro</h1>
+            <p class="subtitle">Enterprise Content Management System</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message|safe }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/download" method="post" id="download-form">
+            <div class="form-group">
+                <label for="staging_base_url" class="form-label">Staging Environment URL</label>
+                <input 
+                    type="url" 
+                    id="staging_base_url" 
+                    name="staging_base_url" 
+                    class="form-input"
+                    placeholder="https://www-stg-brand-country-ng.dw-sites.com" 
+                    required
+                >
+                <p class="form-hint">Enter the complete base URL without trailing paths</p>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Authentication Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-input"
+                    placeholder="••••••••••" 
+                    required
+                >
+                <p class="form-hint">Username: storefront (auto-configured)</p>
+            </div>
+
+            <div class="form-group">
+                <label for="ids_text" class="form-label">Target Page IDs</label>
+                <textarea 
+                    id="ids_text" 
+                    name="ids_text" 
+                    class="form-input form-textarea"
+                    placeholder="Welcome&#10;About&#10;Services&#10;Contact&#10;Portfolio"
+                    required
+                ></textarea>
+                <p class="form-hint">Enter page identifiers, one per line. System automatically filters valid IDs</p>
+            </div>
+
+            <button type="submit" class="submit-button">
+                Execute Download Protocol
+            </button>
+        </form>
+
+        <div class="tech-badge">v2.1.0 | ENTERPRISE</div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loader-overlay">
+        <div class="loading-content">
+            <div class="progress-ring">
+                <svg width="120" height="120">
+                    <defs>
+                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="background" cx="60" cy="60" r="50" />
+                    <circle class="progress" cx="60" cy="60" r="50" />
+                </svg>
+            </div>            <div class="loading-text">Processing Request</div>
+            <div class="loading-message">
+                <span class="typewriter" id="typewriter-text"></span>
+            </div>
+        </div>
+    </div>    <script>
+        const downloadForm = document.getElementById('download-form');
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const typewriterText = document.getElementById('typewriter-text');
+        
+        const message = "It is processing, my good Sir/Lady";
+        let typewriterInterval = null;
+        let cookieCheckInterval = null;
+
+        function typewriterEffect() {
+            let i = 0;
+            typewriterText.textContent = '';
+            
+            typewriterInterval = setInterval(() => {
+                if (i < message.length) {
+                    typewriterText.textContent += message.charAt(i);
+                    i++;
+                } else {
+                    // Message complete, pause then restart
+                    setTimeout(() => {
+                        typewriterText.textContent = '';
+                        i = 0;
+                    }, 2000); // Pause for 2 seconds before restarting
+                }
+            }, 100); // Type at 100ms per character
+        }
+
+        function hideLoader() {
+            console.log("Download complete - hiding loader...");
+            loaderOverlay.classList.add('fade-out');
+
+            if (typewriterInterval) clearInterval(typewriterInterval);
+            
+            setTimeout(() => {
+                loaderOverlay.style.display = 'none';
+                loaderOverlay.classList.remove('fade-out');
+                const hiddenInput = downloadForm.querySelector('input[name="downloadToken"]');
+                if (hiddenInput) {
+                    hiddenInput.remove();
+                }
+            }, 500);
+        }
+
+        function checkCookie(token) {
+            const cookieName = `downloadToken=${token}`;
+            if (document.cookie.includes(cookieName)) {
+                console.log("Download completion cookie detected");
+                clearInterval(cookieCheckInterval);
+                hideLoader();
+                document.cookie = `downloadToken=${token}; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0`;
+            }
+        }
+
+        downloadForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            if (!downloadForm.checkValidity()) {
+                downloadForm.reportValidity();
+                return;
+            }            // Show loading overlay
+            loaderOverlay.classList.add('active');
+            loaderOverlay.classList.remove('fade-out');
+            typewriterEffect();
+            
+            // Setup download token for completion tracking
+            const token = 'token-' + Date.now() + '-' + Math.random().toString(36).substring(2);
+            console.log("Generated download token:", token);
+
+            const oldHiddenInput = downloadForm.querySelector('input[name="downloadToken"]');
+            if (oldHiddenInput) oldHiddenInput.remove();
+            
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'downloadToken';
+            hiddenInput.value = token;
+            downloadForm.appendChild(hiddenInput);
+
+            // Start monitoring for completion
+            if (cookieCheckInterval) clearInterval(cookieCheckInterval);
+            cookieCheckInterval = setInterval(() => checkCookie(token), 250);
+
+            // Timeout fallback
+            setTimeout(() => {
+                if (cookieCheckInterval) {
+                    clearInterval(cookieCheckInterval);
+                    console.log("Download monitoring timeout reached");
+                }
+            }, 60000);
+
+            // Submit the form
+            console.log("Submitting download request...");
+            downloadForm.submit();
+        });
+
+        // Handle page navigation edge cases
+        window.addEventListener('pageshow', function(event) {
+            if (loaderOverlay.classList.contains('active')) {
+                loaderOverlay.classList.remove('active');
+                if (quoteInterval) clearInterval(quoteInterval);
+                if (cookieCheckInterval) clearInterval(cookieCheckInterval);
+            }
+        });
+    </script>
+
+</body>
+</html>
