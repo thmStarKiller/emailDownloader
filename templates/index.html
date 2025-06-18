@@ -185,9 +185,7 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-        }
-
-        /* Loading Overlay with Rick & Morty Style */
+        }        /* Loading Overlay with Rick & Morty Style */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -201,10 +199,16 @@
             justify-content: center;
             z-index: 9999;
             flex-direction: column;
+            transition: background 2s ease-out, opacity 1s ease-out;
         }
 
         .loading-overlay.active {
             display: flex;
+        }
+
+        /* Completion state styling */
+        .loading-overlay.completed {
+            background: rgba(16, 185, 129, 0.1);
         }
 
         .loading-content {
@@ -673,14 +677,17 @@
                     
                     if (data.status === 'completed') {
                         clearTimeout(progressInterval);
-                        clearInterval(emojiInterval);
+                        if (emojiInterval) clearInterval(emojiInterval); // Stop emoji creation
                         showDownloadLink();
                         return;
                     } else if (data.status === 'failed') {
                         clearTimeout(progressInterval);
-                        clearInterval(emojiInterval);
-                        hideLoading();
-                        alert('Download failed: ' + data.funny_message);
+                        if (emojiInterval) clearInterval(emojiInterval); // Stop emoji creation
+                        stopAnimationsSmooth(); // Stop animations even on failure
+                        setTimeout(() => {
+                            hideLoading();
+                            alert('Download failed: ' + data.funny_message);
+                        }, 2000); // Give time for smooth stop
                         return;
                     }
                     
@@ -738,9 +745,7 @@
                     element.style.color = '';
                 }, 300);
             }
-        }
-
-        // Show download link
+        }        // Show download link with smooth animation stop
         function showDownloadLink() {
             const container = document.getElementById('download-link-container');
             const link = document.getElementById('download-link');
@@ -748,21 +753,153 @@
             link.href = `/download_result/${currentJobId}`;
             container.style.display = 'block';
             
+            // Stop animations smoothly
+            stopAnimationsSmooth();
+            
             // Auto-hide after 30 seconds
             setTimeout(() => {
                 hideLoading();
             }, 30000);
-        }
+        }        // Smoothly stop all animations when process completes
+        function stopAnimationsSmooth() {
+            // 1. Stop floating emojis with fade out
+            const floatingEmojis = document.getElementById('floating-emojis');
+            const existingEmojis = floatingEmojis.querySelectorAll('.emoji');
+            existingEmojis.forEach(emoji => {
+                emoji.style.transition = 'opacity 1s ease-out';
+                emoji.style.opacity = '0';
+                setTimeout(() => {
+                    if (emoji.parentNode) {
+                        emoji.parentNode.removeChild(emoji);
+                    }
+                }, 1000);
+            });
 
-        // Hide loading overlay
+            // 2. Slow down portal ring animation
+            const portalRing = document.querySelector('.portal-ring');
+            if (portalRing) {
+                portalRing.style.transition = 'all 2s ease-out';
+                portalRing.style.animationDuration = '6s'; // Slow down from 3s to 6s
+                portalRing.style.opacity = '0.5';
+                
+                // Stop portal completely after 3 seconds
+                setTimeout(() => {
+                    portalRing.style.animationPlayState = 'paused';
+                    portalRing.style.opacity = '0.2';
+                }, 3000);
+            }
+
+            // 3. Slow down Rick head bouncing
+            const rickHead = document.querySelector('.rick-head');
+            if (rickHead) {
+                rickHead.style.transition = 'all 2s ease-out';
+                rickHead.style.animationDuration = '4s'; // Slow down from 2s to 4s
+                setTimeout(() => {
+                    rickHead.style.animationPlayState = 'paused';
+                    rickHead.style.transform = 'translateY(0px) rotate(0deg)'; // Rest position
+                }, 2000);
+            }
+
+            // 4. Fade out background particles
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(particle => {
+                particle.style.transition = 'opacity 2s ease-out';
+                particle.style.opacity = '0.3';
+                setTimeout(() => {
+                    particle.style.animationPlayState = 'paused';
+                }, 2000);
+            });
+
+            // 5. Change loading overlay to completion state
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                setTimeout(() => {
+                    loadingOverlay.classList.add('completed');
+                }, 1000);
+            }
+
+            console.log('🎉 Animations smoothly stopped - Rick & Morty style completion!');
+        }// Hide loading overlay with complete cleanup
         function hideLoading() {
-            document.getElementById('loading-overlay').classList.remove('active');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            // Fade out the overlay smoothly
+            loadingOverlay.style.transition = 'opacity 1s ease-out';
+            loadingOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                loadingOverlay.classList.remove('active');
+                loadingOverlay.style.opacity = '1'; // Reset for next use
+                loadingOverlay.style.background = ''; // Reset background
+            }, 1000);
+            
+            // Re-enable form and clean up
             document.getElementById('submit-btn').disabled = false;
+            
+            // Clean up intervals and timeouts
             if (progressInterval) {
                 clearInterval(progressInterval);
                 progressInterval = null;
             }
+            
+            if (currentTypewriterTimeout) {
+                clearTimeout(currentTypewriterTimeout);
+                currentTypewriterTimeout = null;
+            }
+            
+            // Reset job tracking
             currentJobId = null;
+            lastMessage = '';
+            
+            // Reset all animation states
+            resetAllAnimations();
+        }        // Reset all animations to initial state
+        function resetAllAnimations() {
+            // Reset loading overlay state
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('completed');
+            }
+
+            // Reset portal ring
+            const portalRing = document.querySelector('.portal-ring');
+            if (portalRing) {
+                portalRing.style.animationDuration = '3s';
+                portalRing.style.animationPlayState = 'running';
+                portalRing.style.opacity = '1';
+                portalRing.style.transition = '';
+            }
+
+            // Reset Rick head
+            const rickHead = document.querySelector('.rick-head');
+            if (rickHead) {
+                rickHead.style.animationDuration = '2s';
+                rickHead.style.animationPlayState = 'running';
+                rickHead.style.transform = '';
+                rickHead.style.transition = '';
+            }
+
+            // Reset particles
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(particle => {
+                particle.style.opacity = '0.6';
+                particle.style.animationPlayState = 'running';
+                particle.style.transition = '';
+            });
+
+            // Clear any remaining floating emojis
+            const floatingEmojis = document.getElementById('floating-emojis');
+            if (floatingEmojis) {
+                floatingEmojis.innerHTML = '';
+            }
+
+            // Reset download link container
+            const downloadContainer = document.getElementById('download-link-container');
+            if (downloadContainer) {
+                downloadContainer.style.display = 'none';
+            }
+
+            console.log('🔄 All animations reset to initial state');
         }
 
         // Form submission
