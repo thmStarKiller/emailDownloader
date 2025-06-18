@@ -18,6 +18,12 @@ USERNAME = "storefront"
 
 # Global progress tracking
 progress_data = {}
+# Global storage for completed zip files (separate from progress to avoid JSON serialization issues)
+completed_downloads = {}
+
+# Clean up any existing data on startup
+progress_data.clear()
+completed_downloads.clear()
 
 def download_single_file(page_id, base_url, session, auth_methods):
     """Download a single file with authentication attempts - OPTIMIZED"""
@@ -106,7 +112,13 @@ def index():
 def get_progress(job_id):
     """Get progress for a specific job"""
     if job_id in progress_data:
-        return jsonify(progress_data[job_id])
+        # Create a clean copy without any potential binary data
+        clean_data = {}
+        for key, value in progress_data[job_id].items():
+            # Skip any binary data that shouldn't be in progress_data
+            if key not in ['zip_data'] and not isinstance(value, bytes):
+                clean_data[key] = value
+        return jsonify(clean_data)
     return jsonify({'error': 'Job not found'}), 404
 
 @app.route('/start_download', methods=['POST'])
@@ -472,14 +484,15 @@ def process_download_async(job_id, base_url, password, target_ids):
                         progress_data[job_id]['failed'] += 1
                         progress_data[job_id]['errors'].append(f"Error processing {page_id}: {str(e)}")
                         print(f"❌ Exception for {page_id}: {e}")
-        
-        # Finalize
+          # Finalize
         if progress_data[job_id]['completed'] > 0:
             zip_buffer.seek(0)
             progress_data[job_id]['status'] = 'completed'
             progress_data[job_id]['funny_message'] = "🎉 Rick would be proud! Download complete, you magnificent bastard!"
-            progress_data[job_id]['zip_data'] = zip_buffer.getvalue()
             progress_data[job_id]['filename'] = f'sitesync_content_{int(time.time())}.zip'
+            
+            # Store zip data separately to avoid JSON serialization issues
+            completed_downloads[job_id] = zip_buffer.getvalue()
         else:
             progress_data[job_id]['status'] = 'failed'
             progress_data[job_id]['funny_message'] = "💀 Well, this is awkward... Everything failed. Even Rick can't fix this mess."
@@ -500,10 +513,10 @@ def download_result(job_id):
     if job_data['status'] != 'completed':
         return jsonify({'error': 'Job not completed'}), 400
     
-    if 'zip_data' not in job_data:
+    if job_id not in completed_downloads:
         return jsonify({'error': 'No data available'}), 404
     
-    zip_buffer = io.BytesIO(job_data['zip_data'])
+    zip_buffer = io.BytesIO(completed_downloads[job_id])
     
     response = make_response(send_file(
         zip_buffer,
@@ -514,6 +527,8 @@ def download_result(job_id):
     
     # Clean up job data after download
     del progress_data[job_id]
+    if job_id in completed_downloads:
+        del completed_downloads[job_id]
     
     return response
 
