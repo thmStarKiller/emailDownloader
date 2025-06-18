@@ -1,0 +1,4 @@
+Flask
+requests
+gunicorn
+pytube==15.0.0
