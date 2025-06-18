@@ -20,36 +20,48 @@ USERNAME = "storefront"
 progress_data = {}
 
 def download_single_file(page_id, base_url, session, auth_methods):
-    """Download a single file with authentication attempts"""
+    """Download a single file with authentication attempts - OPTIMIZED"""
     url = f"{base_url}/{page_id}.html"
     filename = f"{page_id}.html"
     
-    print(f"Processing: {filename}")
+    print(f"⚡ Processing: {filename}")
     
     response_req = None
     auth_success = False
     successful_auth = None
     
-    for auth_user, auth_pass in auth_methods:
+    # Try most common auth methods first for speed
+    priority_auth = [
+        (USERNAME, ""),  # Try empty password first
+        (USERNAME, None),  # No auth
+        ("admin", ""),
+        ("", "")  # No credentials
+    ] + auth_methods[:5]  # Limit auth attempts for speed
+    
+    for auth_user, auth_pass in priority_auth:
         try:
             response_req = session.get(
                 url, 
                 auth=(auth_user, auth_pass) if auth_user or auth_pass else None,
-                timeout=20,
-                allow_redirects=True
+                timeout=10,  # Reduced timeout for speed
+                allow_redirects=True,
+                stream=True  # Stream for faster download
             )
             
             if response_req.status_code == 200:
                 auth_success = True
                 successful_auth = (auth_user, auth_pass)
+                print(f"⚡ Fast auth success: {auth_user}")
                 break
             elif response_req.status_code in [302, 303, 307, 308]:
-                if len(response_req.content) > 1000:
+                if len(response_req.content) > 500:  # Lower threshold for faster detection
                     auth_success = True
                     successful_auth = (auth_user, auth_pass)
+                    print(f"⚡ Redirect auth success: {auth_user}")
                     break
                     
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️ Quick fail for {auth_user}: {e}")
             continue
     
     if auth_success:
@@ -58,12 +70,14 @@ def download_single_file(page_id, base_url, session, auth_methods):
             'success': True,
             'filename': filename,
             'content': response_req.content,
-            'auth': successful_auth[0]
+            'auth': successful_auth[0],
+            'size': len(response_req.content)
         }
     else:
-        error_msg = f"Authentication failed for {filename}"
+        error_msg = f"Auth failed for {filename}"
         if response_req:
             error_msg += f" (Status: {response_req.status_code})"
+        print(f"❌ {error_msg}")
         return {
             'success': False,
             'filename': filename,
@@ -299,43 +313,84 @@ def download_complete():
     return render_template('complete.html')
 
 def get_funny_messages():
-    """Rick and Morty style absurd messages"""
+    """Properly vulgar and hilarious Rick & Morty style messages"""
     return [
-        "🛸 Calibrating the flux capacitor for optimal burp-efficiency...",
-        "👽 Teaching aliens how to use Internet Explorer... this might take a while",
-        "🧪 Mixing interdimensional chemicals that definitely aren't illegal",
-        "🚀 Launching files through the multiverse portal (Portal gun sold separately)",
-        "🤖 Training AI to appreciate Rick's superior intellect... still loading...",
-        "💀 Resurrecting dead pixels from the digital afterlife",
-        "🍔 Feeding data to hungry servers (they prefer synthetic cheese)",
-        "🔬 Conducting morally questionable experiments on your files",
-        "🌪️ Creating a temporal vortex to download faster than light",
-        "🧠 Uploading consciousness to the cloud... wait, that's illegal",
-        "👨‍🔬 Rick is 200% done with this download already",
-        "😵 Morty's having an existential crisis about file compression",
-        "🤯 Breaking the fourth wall of your browser's security",
-        "🎭 Convincing your files they want to be downloaded",
-        "🎪 Running a circus for sentient bits and bytes",
-        "🍕 Ordering interdimensional pizza while we wait",
-        "🎮 Playing chess with AI overlords for faster processing",
-        "🦄 Sacrificing digital unicorns to the bandwidth gods",
-        "🌮 Converting your files into taco format for easier digestion",
-        "🎨 Painting the Mona Lisa with pure data... again",
-        "🚂 All aboard the data train! Choo-choo, motherf***er!",
-        "🎪 Training circus bears to juggle your precious files",
-        "🧪 Mixing chemicals that would make Walter White jealous",
-        "🚀 Houston, we have a download problem... just kidding!",
-        "🤡 Hiring professional clowns to entertain your data",
-        "🍌 Converting everything to banana format (Rick's favorite)",
-        "🎭 Performing Shakespeare for an audience of confused electrons",
-        "🦆 Teaching rubber ducks advanced quantum mechanics",
-        "🎪 Running a three-ring circus inside your CPU",
-        "🍄 Growing mushrooms in the server farm (they're organic!)"
+        "🧪 Rick: 'I'm not gonna sugarcoat it Morty, this download is taking forever because your files are *burp* shit!'",
+        "👽 Morty: 'Oh geez Rick, w-w-why does everything have to be so complicated?' Rick: 'Because the universe hates us, Morty!'",
+        "� Rick: 'Listen *burp* I've downloaded files across 47 dimensions and yours are still the most fucked up I've seen!'",
+        "🤖 Rick: 'These servers are dumber than Jerry trying to use a *burp* smartphone, Morty!'",
+        "💀 Rick: 'Your internet connection is slower than Morty's brain, and that's saying something!'",
+        "🔬 Rick: 'I'm literally *burp* manipulating quantum packets here while you sit there doing jack shit!'",
+        "🍺 Rick: 'I need another drink... this download is more painful than family therapy!'",
+        "🌪️ Rick: 'Creating interdimensional portals is easier than downloading your garbage files!'",
+        "� Morty: 'Rick, is this legal?' Rick: 'Nothing we do is legal, Morty! That's what makes it fun!'",
+        "🍌 Rick: 'I've seen cleaner code in Jerry's browser history, and that's *burp* horrifying!'",
+        "� Rick: 'Your files are more scattered than my relationship with your grandmother!'",
+        "🦄 Rick: 'Even fictional creatures have better download speeds than this shit!'",
+        "🌮 Rick: 'I could cook a five-course meal in the time it takes to download one of your files!'",
+        "� Rick: 'This is more of a circus than the time we accidentally *burp* enslaved an entire planet!'",
+        "🚂 Rick: 'All aboard the pain train! Next stop: disappointment station!'",
+        "🧠 Rick: 'Using 0.03% of my brain capacity and still outsmarting every computer here!'",
+        "🎮 Rick: 'I could beat Dark Souls blindfolded faster than this download completes!'",
+        "🦆 Rick: 'These rubber duck debuggers have more intelligence than your server architecture!'",
+        "🍄 Rick: 'I'm growing mushrooms in the time it takes your files to *burp* process!'",
+        "💩 Rick: 'This code is more broken than our family dynamics, Morty!'",
+        "🔥 Rick: 'Your server is burning slower than my liver processes alcohol!'",
+        "⚡ Rick: 'I've created life itself and it's still easier than fixing your shit code!'",
+        "� Rick: 'Missing target files like Jerry misses the point of everything!'",
+        "🐍 Rick: 'Python is called Python because it's *burp* slowly strangling your data to death!'",
+        "🍕 Rick: 'Ordered pizza, ate pizza, got food poisoning, recovered, and your files are still downloading!'",
+        "� Rick: 'I could paint the Mona Lisa with my ass and still finish before this download!'",
+        "🚀 Rick: 'Houston, we have a problem: your files are dog shit!'",
+        "💸 Rick: 'Wasting more time than Jerry at a job interview!'",
+        "� Rick: 'This is taking longer than explaining science to your father!'",
+        "🔫 Rick: 'I've killed people for less than making me wait this long, Morty!'",
+        "� Rick: 'Getting drunk would be more productive than waiting for this!'",
+        "🤡 Rick: 'Your download speed is more of a joke than Jerry's existence!'",
+        "� Rick: 'More disappointing than the time Morty tried to *burp* save the universe!'",
+        "� Rick: 'Rolling dice would give us better file transfer rates!'",
+        "� Rick: 'Even zombies move faster than your data packets!'",
+        "🎬 Rick: 'This download is dragging on longer than a Jerry monologue!'",
+        "⏰ Rick: 'Time moves slower when you're watching paint dry... or downloading your files!'",
+        "🍸 Rick: 'I could distill my own alcohol faster than this processes!'",
+        "🚽 Rick: 'Your code belongs in the toilet with the rest of Jerry's ideas!'",
+        "� Rick: 'I could terraform a moon in the time this takes to finish!'",
+        "🔧 Rick: 'More broken than Morty's confidence after a family dinner!'",
+        "🎭 Rick: 'This performance is worse than community theater in dimension C-137!'",
+        "💀 Rick: 'I'm dying of old age waiting for your prehistoric download speeds!'",
+        "🍆 Rick: 'Your files are processing slower than Jerry trying to understand basic concepts!'",
+        "🌈 Rick: 'Creating rainbows from scratch would be faster than this shit show!'",
+        "🔮 Rick: 'I predict this will finish sometime after the heat death of the universe!'",
+        "⚗️ Rick: 'Brewing illegal chemicals is less *burp* complicated than your file structure!'",
+        "� Rick: 'Better odds at a rigged casino than your files downloading correctly!'",
+        "🍔 Rick: 'Fast food is slower than your download and that's saying something!'",
+        "🎪 Rick: 'Welcome to the circus of incompetence, starring your server infrastructure!'"
     ]
 
+def get_extra_vulgar_messages():
+    """Extra vulgar Rick & Morty messages for when users need more entertainment"""
+    return [
+        "🖕 Rick: 'Fuck this shit, Morty! I could debug reality itself faster than this!'",
+        "💀 Rick: 'This download is more fucked than Jerry's life choices!'",
+        "🤬 Rick: 'Holy shit, Morty! These files are taking longer than your puberty!'",
+        "🍺 Rick: 'I'm getting shitfaced drunk waiting for your ass files to download!'",
+        "🔥 Rick: 'This is more of a clusterfuck than our last family vacation!'",
+        "💩 Rick: 'Your code is so shitty, it makes Jerry look competent!'",
+        "🤯 Rick: 'What the fuck is taking so goddamn long?! I've destroyed civilizations faster!'",
+        "🚽 Rick: 'Flushing this shit down the toilet would be more productive!'",
+        "⚡ Rick: 'Jesus fucking Christ, Morty! Is this server powered by hamsters?!'",
+        "🎪 Rick: 'This shitshow is more entertaining than Jerry's career!'"
+    ]
+
+def get_combined_funny_messages():
+    """Combine regular and extra vulgar messages for maximum entertainment"""
+    regular = get_funny_messages()
+    extra = get_extra_vulgar_messages()
+    return regular + extra
+
 def process_download_async(job_id, base_url, password, target_ids):
-    """Process downloads asynchronously with parallel execution and funny updates"""
-    funny_messages = get_funny_messages()
+    """Process downloads asynchronously with parallel execution and vulgar Rick humor"""
+    funny_messages = get_combined_funny_messages()  # Use combined vulgar messages
     
     try:
         # Update status
@@ -371,13 +426,12 @@ def process_download_async(job_id, base_url, password, target_ids):
         # Create zip buffer
         zip_buffer = io.BytesIO()
         results = []
+          # Parallel processing with ThreadPoolExecutor - OPTIMIZED FOR SPEED
+        max_workers = min(20, len(target_ids))  # Increased workers for speed
         
-        # Parallel processing with ThreadPoolExecutor
-        max_workers = min(10, len(target_ids))  # Don't overwhelm the server
-        
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED, compresslevel=1) as zipf:  # Fast compression
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                # Submit all jobs
+                # Submit all jobs at once for maximum parallelism
                 future_to_id = {
                     executor.submit(download_single_file, page_id, base_url, session, auth_methods): page_id 
                     for page_id in target_ids
@@ -386,18 +440,19 @@ def process_download_async(job_id, base_url, password, target_ids):
                 completed = 0
                 message_index = 0
                 
-                # Process completed downloads
+                # Process completed downloads as they finish
                 for future in as_completed(future_to_id):
                     page_id = future_to_id[future]
                     completed += 1
                     
-                    # Update funny message every few completions
-                    if completed % 3 == 0 or completed == 1:
+                    # Update funny message every 2 completions or immediately for first few
+                    if completed <= 3 or completed % 2 == 0:
                         message_index = (message_index + 1) % len(funny_messages)
                         progress_data[job_id]['funny_message'] = funny_messages[message_index]
+                        print(f"🎭 Updated message: {funny_messages[message_index]}")
                     
                     try:
-                        result = future.result()
+                        result = future.result(timeout=30)  # 30 second timeout per file
                         results.append(result)
                         
                         if result['success']:
