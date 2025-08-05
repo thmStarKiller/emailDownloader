@@ -4,7 +4,7 @@
   command = "pip install -r requirements.txt && pip install -r requirements.txt -t netlify/functions"
 
 [functions]
-  python_version = "3.11"
+  runtime = "python3.11"
   included_files = ["app.py"]
 
 [[redirects]]
