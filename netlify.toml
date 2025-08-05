@@ -1,26 +1,42 @@
 [build]
   functions = "netlify/functions"
-  publish = "templates"
-  command = "pip install -r requirements.txt && pip install -r requirements.txt -t netlify/functions"
+  publish = "static"
+  command = "pip install -r requirements.txt"
 
 [functions]
-  runtime = "python3.11"
-  included_files = ["app.py"]
+  included_files = ["app.py", "templates/**", "static/**"]
+
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/server"
+  status = 200
 
 [[redirects]]
   from = "/start_download"
-  to = "/.netlify/functions/server/start_download"
+  to = "/.netlify/functions/server"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/download"
-  to = "/.netlify/functions/server/download"
+  to = "/.netlify/functions/server"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/progress/*"
-  to = "/.netlify/functions/server/progress/:splat"
+  to = "/.netlify/functions/server"
   status = 200
-  force = true
+
+[[redirects]]
+  from = "/complete"
+  to = "/.netlify/functions/server"
+  status = 200
+
+[[redirects]]
+  from = "/download_result/*"
+  to = "/.netlify/functions/server"
+  status = 200
+
+[[redirects]]
+  from = "/static/*"
+  to = "/static/:splat"
+  status = 200
