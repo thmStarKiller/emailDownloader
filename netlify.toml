@@ -1,0 +1,25 @@
+[build]
+  functions = "netlify/functions"
+  publish = "templates"
+  command = "pip install -r requirements.txt"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+[[redirects]]
+  from = "/start_download"
+  to = "/.netlify/functions/server/start_download"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/download"
+  to = "/.netlify/functions/server/download"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/progress/*"
+  to = "/.netlify/functions/server/progress/:splat"
+  status = 200
+  force = true
