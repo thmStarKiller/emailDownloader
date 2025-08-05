@@ -30,12 +30,11 @@ cd emailDownloader
 
 2. Install dependencies:
 ```bash
-pip install -r funny_downloader_app/requirements.txt
+pip install -r requirements.txt
 ```
 
 3. Run the application:
 ```bash
-cd funny_downloader_app
 python app.py
 ```
 
@@ -43,15 +42,16 @@ python app.py
 
 ### Deployment
 
-This app is configured for deployment on Heroku:
+The project includes configuration for deployment on **Netlify** using
+serverless functions:
 
-1. **Deploy to Heroku**:
-   - Create a new Heroku app
-   - Connect to your GitHub repository
-   - Deploy from the main branch
-
-2. **Environment Variables**:
-   - Set `SECRET_KEY` to a secure random string in production
+1. Push the repository to GitHub.
+2. Create a new Netlify site connected to the repository.
+3. Netlify will automatically install the Python dependencies and build
+   the serverless function defined in `netlify/functions/server.py`.
+4. Set the `SECRET_KEY` environment variable in your Netlify site
+   settings.
+5. Deploy the site and access it via your Netlify domain.
 
 ## Usage
 
