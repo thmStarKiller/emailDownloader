@@ -1,8 +1,8 @@
 [build]
   functions = "netlify/functions"
   publish = "static"
-  # Install root requirements so the Flask dependencies are available to the function bundler
-  command = "pip install -r requirements.txt"
+  # Explicitly activate mise-managed Python, then install dependencies
+  command = "mise install || true; eval \"$(mise activate bash)\"; python -V; python -m pip install --upgrade pip; python -m pip install -r requirements.txt"
 
   [build.environment]
     PIP_NO_CACHE_DIR = "off"
