@@ -5,10 +5,8 @@
   command = "pip install -r requirements.txt"
 
   [build.environment]
-    PYTHON_VERSION = "3.11.9"
-    PIP_NO_CACHE_DIR = "off"
-    # Prevent Netlify's mise from trying ambiguous 'python-3.11'
-    MISE_PYTHON_COMPILE = "false"
+  PYTHON_VERSION = "3.11.6"
+  PIP_NO_CACHE_DIR = "off"
 
 [functions]
   included_files = [
