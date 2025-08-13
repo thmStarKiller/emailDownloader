@@ -1,77 +1,10 @@
 [build]
   functions = "netlify/functions"
-  publish = "static" # Existing publish dir retained (do NOT change to dist)
-  # CI-safe multi-step build using mise for Python toolchain activation.
-  command = """
-bash -lc '
-set -euo pipefail
-
-# ---- Activate mise & install tools ----
-if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate bash)"
-  mise install --yes
-else
-  echo "[WARN] mise not found; attempting to continue with system python" >&2
-fi
-
-# ---- Python toolchain ----
-if command -v python >/dev/null 2>&1; then
-  python -V || true
-  python -m ensurepip --upgrade || true
-  python -m pip install --upgrade pip || true
-  if [ -f requirements.txt ]; then
-    echo "Installing Python dependencies...";
-    python -m pip install -r requirements.txt
-  elif [ -f pyproject.toml ]; then
-    echo "Installing Python project (pyproject.toml)...";
-    python -m pip install -e . || python -m pip install .
-  else
-    echo "No Python dependency manifest found; skipping.";
-  fi
-else
-  echo "[WARN] python executable not found" >&2
-fi
-
-# ---- Node toolchain (optional) ----
-if [ -f package.json ]; then
-  if [ -f package-lock.json ]; then
-    npm ci
-  else
-    npm install
-  fi
-  if npm run | grep -q build; then
-    npm run build
-  else
-    echo "No npm build script; skipping web asset build.";
-  fi
-else
-  echo "No package.json; skipping Node steps.";
-fi
-
-# ---- Diagnostics: report index.html locations & publish dir contents ----
-echo "\n--- Build output diagnostics ---"
-find . -maxdepth 4 -type f -name index.html -print || true
-echo "Configured publish dir: ${PUBLISH_DIR:-static}"
-if [ -d "${PUBLISH_DIR:-static}" ]; then
-  ls -la "${PUBLISH_DIR:-static}" || true
-else
-  echo "[WARN] Publish directory ${PUBLISH_DIR:-static} does not exist." >&2
-fi
-
-if [ ! -f "${PUBLISH_DIR:-static}/index.html" ]; then
-  echo "[INFO] No index.html in publish dir (Flask served via function & redirects).";
-fi
-'
-"""
+  publish = "static"
+  command = "echo Using netlify.toml build; python -m pip install -U pip && python -m pip install -r requirements.txt -t netlify/functions"
 
   [build.environment]
-    MISE_TRUSTED_CONFIG = "true" # Avoid interactive trust prompts
-    # PIP_NO_CACHE_DIR optional (left off to allow caching). Uncomment if desired:
-    # PIP_NO_CACHE_DIR = "off"
-    # --- OPTION B (Fallback) ---
-    # To bypass mise entirely, comment the build command above and instead set:
-    # PYTHON_VERSION = "3.11"
-    # And simplify command to just pip install.
+    PYTHON_VERSION = "3.11"
 
 [functions]
   included_files = [
@@ -88,33 +21,7 @@ fi
   status = 200
   force = true
 
-# Explicit API endpoints (preserve path using :splat where needed)
-[[redirects]]
-  from = "/start_download"
-  to = "/.netlify/functions/server/start_download"
-  status = 200
-
-[[redirects]]
-  from = "/download"
-  to = "/.netlify/functions/server/download"
-  status = 200
-
-[[redirects]]
-  from = "/progress/*"
-  to = "/.netlify/functions/server/progress/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/complete"
-  to = "/.netlify/functions/server/complete"
-  status = 200
-
-[[redirects]]
-  from = "/download_result/*"
-  to = "/.netlify/functions/server/download_result/:splat"
-  status = 200
-
-# Catch‑all (root + any other Flask route). Must be last.
+# Catch-all (root + any Flask route not under /static) -> serverless function
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/server/:splat"
