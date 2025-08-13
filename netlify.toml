@@ -1,10 +1,11 @@
 [build]
   functions = "netlify/functions"
   publish = "static"
-  # Explicitly activate mise-managed Python, then install dependencies
-  command = "mise install || true; eval \"$(mise activate bash)\"; python -V; python -m pip install --upgrade pip; python -m pip install -r requirements.txt"
+  # Use Netlify built-in Python (no mise). Install deps only.
+  command = "python -V && python -m pip install --upgrade pip && python -m pip install -r requirements.txt"
 
   [build.environment]
+    PYTHON_VERSION = "3.11"
     PIP_NO_CACHE_DIR = "off"
 
 [functions]
