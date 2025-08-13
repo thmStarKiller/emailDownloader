@@ -1,4 +1,0 @@
-Flask
-serverless-wsgi
-werkzeug
-requests

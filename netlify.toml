@@ -1,57 +1,18 @@
 [build]
   functions = "netlify/functions"
   publish = "static"
-  # Copy app files AND install dependencies to function directory
-  command = """
-    echo 'Starting Netlify build...' && \
-    echo '=== Pre-build function check ===' && \
-    ls -la netlify/functions/ 2>/dev/null || echo 'No functions dir yet' && \
-    python -m pip install -U pip && \
-    mkdir -p netlify/functions/server/package && \
-    python -m pip install -r requirements.txt -t netlify/functions/server/package && \
-    cp app.py netlify/functions/server/ && \
-    cp -r templates netlify/functions/server/ && \
-    cp -r static netlify/functions/server/ 2>/dev/null || true && \
-    cp *.woff netlify/functions/server/ 2>/dev/null || true && \
-    echo '=== Post-build function check ===' && \
-    find netlify/functions -name '*.py' -type f && \
-    echo '=== Function file sizes ===' && \
-    du -sh netlify/functions/* && \
-    echo 'Build complete. Function structure:' && \
-    tree netlify/functions -L 3 || ls -laR netlify/functions/
-  """
+  command = "echo 'Build complete'"
 
-  [build.environment]
-    PYTHON_VERSION = "3.11"
+[build.environment]
+  PYTHON_VERSION = "3.11"
 
-[functions]
-  # Explicitly set Python runtime
-  node_bundler = "esbuild"
-  included_files = [
-    "**/*.py",
-    "**/*.html",
-    "**/*.css",
-    "**/*.js",
-    "**/*.woff",
-    "**/*.woff2",
-    "**/*.json"
-  ]
-
-# Static files bypass function
+# Test function route
 [[redirects]]
-  from = "/static/*"
-  to = "/static/:splat"
+  from = "/test"
+  to = "/.netlify/functions/test"
   status = 200
-  force = true
 
-# Root path explicitly to function
-[[redirects]]
-  from = "/"
-  to = "/.netlify/functions/server"
-  status = 200
-  force = true
-
-# All other paths to function
+# Main app route
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/server/:splat"
