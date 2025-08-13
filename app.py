@@ -532,6 +532,17 @@ def download_result(job_id):
     
     return response
 
+# Add debug endpoint to verify function works
+@app.route('/.netlify/functions/server')
+@app.route('/.netlify/functions/server/')
+def netlify_root():
+    from flask import jsonify
+    return jsonify({
+        "status": "ok",
+        "message": "Flask function is working",
+        "routes": [str(rule) for rule in app.url_map.iter_rules()]
+    })
+
 # Production configuration
 if __name__ == '__main__':
     # Only for local development

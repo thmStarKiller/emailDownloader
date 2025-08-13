@@ -1,27 +1,50 @@
 [build]
   functions = "netlify/functions"
   publish = "static"
-  command = "echo Using netlify.toml build; python -m pip install -U pip && python -m pip install -r requirements.txt -t netlify/functions"
+  # Copy app files AND install dependencies to function directory
+  command = """
+    echo 'Starting Netlify build...' && \
+    python -m pip install -U pip && \
+    python -m pip install -r requirements.txt -t netlify/functions && \
+    cp app.py netlify/functions/ && \
+    cp -r templates netlify/functions/ 2>/dev/null || true && \
+    cp -r static netlify/functions/ 2>/dev/null || true && \
+    cp *.woff netlify/functions/ 2>/dev/null || true && \
+    echo 'Build complete. Function contents:' && \
+    ls -la netlify/functions/
+  """
 
   [build.environment]
     PYTHON_VERSION = "3.11"
 
 [functions]
+  # Explicitly set Python runtime
+  node_bundler = "esbuild"
   included_files = [
-    "app.py",
-    "templates/**",
-    "static/**",
-    "Comodo-Regular.woff"
+    "**/*.py",
+    "**/*.html",
+    "**/*.css",
+    "**/*.js",
+    "**/*.woff",
+    "**/*.woff2",
+    "**/*.json"
   ]
 
-# Serve static assets directly first (keeps them on CDN instead of invoking the function)
+# Static files bypass function
 [[redirects]]
   from = "/static/*"
   to = "/static/:splat"
   status = 200
   force = true
 
-# Catch-all (root + any Flask route not under /static) -> serverless function
+# Root path explicitly to function
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/server"
+  status = 200
+  force = true
+
+# All other paths to function
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/server/:splat"
