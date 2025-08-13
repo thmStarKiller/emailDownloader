@@ -4,6 +4,12 @@
   # Install root requirements so the Flask dependencies are available to the function bundler
   command = "pip install -r requirements.txt"
 
+  [build.environment]
+    PYTHON_VERSION = "3.11.9"
+    PIP_NO_CACHE_DIR = "off"
+    # Prevent Netlify's mise from trying ambiguous 'python-3.11'
+    MISE_PYTHON_COMPILE = "false"
+
 [functions]
   included_files = [
     "app.py",
