@@ -47,6 +47,20 @@ if [ -f package.json ]; then
 else
   echo "No package.json; skipping Node steps.";
 fi
+
+# ---- Diagnostics: report index.html locations & publish dir contents ----
+echo "\n--- Build output diagnostics ---"
+find . -maxdepth 4 -type f -name index.html -print || true
+echo "Configured publish dir: ${PUBLISH_DIR:-static}"
+if [ -d "${PUBLISH_DIR:-static}" ]; then
+  ls -la "${PUBLISH_DIR:-static}" || true
+else
+  echo "[WARN] Publish directory ${PUBLISH_DIR:-static} does not exist." >&2
+fi
+
+if [ ! -f "${PUBLISH_DIR:-static}/index.html" ]; then
+  echo "[INFO] No index.html in publish dir (Flask served via function & redirects).";
+fi
 '
 """
 
