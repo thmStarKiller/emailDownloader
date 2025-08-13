@@ -30,28 +30,65 @@ cd emailDownloader
 
 2. Install dependencies:
 ```bash
-pip install -r funny_downloader_app/requirements.txt
+pip install -r requirements.txt
 ```
 
-3. Run the application:
+3. Run the application (development):
 ```bash
-cd funny_downloader_app
 python app.py
+```
+
+Or run the production entrypoint (mirrors Procfile):
+```bash
+python main.py
 ```
 
 4. Open your browser to `http://localhost:5000`
 
 ### Deployment
 
-This app is configured for deployment on Heroku:
+### Netlify (Serverless Functions)
 
-1. **Deploy to Heroku**:
-   - Create a new Heroku app
-   - Connect to your GitHub repository
-   - Deploy from the main branch
+This repository now contains a `netlify.toml` and a Python function wrapper (`netlify/functions/server.py`) so the Flask app runs inside a single Netlify Function.
 
-2. **Environment Variables**:
-   - Set `SECRET_KEY` to a secure random string in production
+Key points:
+
+1. Build configuration
+   - Build command: `pip install -r requirements.txt`
+   - Functions directory: `netlify/functions`
+   - Publish directory: `static` (only static assets are published directly; all dynamic routes go to the function)
+2. Redirect rules
+   - All API / Flask routes are rewritten to `/.netlify/functions/server/...` while preserving the trailing path segments.
+   - Static assets under `/static/*` are served directly via CDN first for performance.
+3. Included files
+   - Templates, static assets, font, and `app.py` are bundled via the `included_files` list in `netlify.toml`.
+4. Path handling
+   - The function handler strips the `/.netlify/functions/server` prefix so Flask receives the real route (`/`, `/start_download`, etc.).
+
+Deploy Steps:
+1. Push to GitHub.
+2. In Netlify create a new site from the repo.
+3. Set build settings (they will auto-detect from `netlify.toml`).
+4. Add environment variable `SECRET_KEY` (recommended) under Site Settings → Build & Deploy → Environment.
+5. Trigger a deploy.
+
+Limitations (Important):
+- The asynchronous multi-poll progress workflow (`/start_download` + `/progress/<job_id>`) relies on in‑memory Python globals. Serverless platforms (including Netlify Functions) do NOT guarantee container reuse between invocations. This means jobs or progress state can disappear mid-process. For reliable async behavior use a persistent host (Railway / Render / Fly.io / Heroku) or add an external store (Redis, DynamoDB, Upstash, etc.).
+- Threads spawned inside a function may be frozen or terminated once the handler returns; large parallel downloads can silently stop. For Netlify keep batches small or fall back to the synchronous `/download` endpoint.
+
+Troubleshooting:
+- 404 on root: Confirm the catch‑all redirect (the last block) exists in `netlify.toml` and redeploy.
+- Function not finding templates: Ensure `app.py`, `templates/`, and `static/` listed under `included_files` (clear cache + redeploy if needed).
+- Timeouts: Netlify Functions have hard execution limits (~10–26s depending on plan) — reduce number of pages per batch.
+- Progress stuck: Likely a cold container reset; move to persistent hosting or add external state backend.
+- Unicode / binary ZIP issues: Already handled by storing ZIP bytes outside the JSON progress object.
+
+### Heroku / Railway (Container Style)
+
+Still supported. A `Procfile` (`web: python main.py`) is provided. For higher concurrency, you can rename `Procfile.gunicorn` to `Procfile` to use Gunicorn.
+
+Environment Variable:
+- `SECRET_KEY` – set to a secure random string.
 
 ## Usage
 

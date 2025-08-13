@@ -1,42 +1,52 @@
 [build]
   functions = "netlify/functions"
   publish = "static"
+  # Install root requirements so the Flask dependencies are available to the function bundler
   command = "pip install -r requirements.txt"
 
 [functions]
-  included_files = ["app.py", "templates/**", "static/**"]
+  included_files = [
+    "app.py",
+    "templates/**",
+    "static/**",
+    "Comodo-Regular.woff"
+  ]
 
+# Serve static assets directly first (keeps them on CDN instead of invoking the function)
 [[redirects]]
-  from = "/"
-  to = "/.netlify/functions/server"
+  from = "/static/*"
+  to = "/static/:splat"
   status = 200
+  force = true
 
+# Explicit API endpoints (preserve path using :splat where needed)
 [[redirects]]
   from = "/start_download"
-  to = "/.netlify/functions/server"
+  to = "/.netlify/functions/server/start_download"
   status = 200
 
 [[redirects]]
   from = "/download"
-  to = "/.netlify/functions/server"
+  to = "/.netlify/functions/server/download"
   status = 200
 
 [[redirects]]
   from = "/progress/*"
-  to = "/.netlify/functions/server"
+  to = "/.netlify/functions/server/progress/:splat"
   status = 200
 
 [[redirects]]
   from = "/complete"
-  to = "/.netlify/functions/server"
+  to = "/.netlify/functions/server/complete"
   status = 200
 
 [[redirects]]
   from = "/download_result/*"
-  to = "/.netlify/functions/server"
+  to = "/.netlify/functions/server/download_result/:splat"
   status = 200
 
+# Catch‑all (root + any other Flask route). Must be last.
 [[redirects]]
-  from = "/static/*"
-  to = "/static/:splat"
+  from = "/*"
+  to = "/.netlify/functions/server/:splat"
   status = 200

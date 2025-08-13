@@ -20,6 +20,15 @@ def handler(event, context):
     else:
         body_bytes = body.encode('utf-8')
 
+    raw_path = event.get('path', '/') or '/'
+    # When using redirect rules that append to the function path, Netlify will send path like
+    # '/.netlify/functions/server/actual_route'. Strip the function base so Flask sees '/actual_route'
+    function_prefix = '/.netlify/functions/server'
+    if raw_path.startswith(function_prefix):
+        stripped_path = raw_path[len(function_prefix):] or '/'
+    else:
+        stripped_path = raw_path
+
     environ = {
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': headers.get('x-forwarded-proto', 'http'),
@@ -29,7 +38,7 @@ def handler(event, context):
         'wsgi.multiprocess': False,
         'wsgi.run_once': False,
         'REQUEST_METHOD': event.get('httpMethod', 'GET'),
-        'PATH_INFO': event.get('path', '/'),
+        'PATH_INFO': stripped_path,
         'QUERY_STRING': event.get('rawQueryString', ''),
         'SERVER_NAME': headers.get('host', 'localhost').split(':')[0],
         'SERVER_PORT': headers.get('host', '80').split(':')[-1],
